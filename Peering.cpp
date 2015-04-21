@@ -26,6 +26,7 @@
 #include <GSMLogicalChannel.h>
 #include <GSML3RRElements.h>
 #include <L3TranEntry.h>
+#include <sstream>
 //#include <TransactionTable.h>
 
 #undef WARNING
@@ -341,6 +342,21 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 		} else {
 			SimpleKeyValue keys;
 			keys.addItems(message + sizeof("RSP NEIGHBOR_PARAMS"));	// sizeof is +1 which is ok - we are skipping the initial space.
+
+			//Our implementation of sending C0s to a file in filesystem for us to scan
+
+			File *c0File;
+			c0File = fopen ("/var/run/c0s.txt", "a+");
+
+			if(c0File != NULL){
+				string c0String;
+				ostringstream convertStream;
+				convertStream << keys.getNumOrBust("C0");
+				c0String = convertStream.str();
+
+				fputs(c0String, c0File);
+				fclose(c0File);
+			}
 
 			{	bool valid;
 				unsigned neighborID = keys.getNum("btsid",valid);
