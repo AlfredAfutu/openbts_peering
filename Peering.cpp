@@ -340,7 +340,9 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 				logAlert(format("badly formatted peering message: %s",message));
 				return;
 			}
-		} else {
+		} 
+		else 
+		{
 			SimpleKeyValue keys;
 			keys.addItems(message + sizeof("RSP NEIGHBOR_PARAMS"));	// sizeof is +1 which is ok - we are skipping the initial space.
 
@@ -349,7 +351,8 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
                		FILE * c0File;
 			c0File = fopen ("/var/run/c0s.txt", "a+");
 
-			if(c0File != NULL){
+			if(c0File != NULL)
+			{
 				string c0String;
 				ostringstream convertStream;
 				convertStream << keys.getNumOrBust("C0");
@@ -359,13 +362,14 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 				fclose(c0File);
 			}
 
-			{	bool valid;
-				unsigned neighborID = keys.getNum("btsid",valid);
-				if (valid && neighborID == btsid) {
-					LOG(ERR) << "BTS is in its own GSM.Neighbors list.";
-					return;
-				}
+			bool valid;
+			unsigned neighborID = keys.getNum("btsid",valid);
+			if (valid && neighborID == btsid) 
+			{
+				LOG(ERR) << "BTS is in its own GSM.Neighbors list.";
+				return;
 			}
+			
 
 			newentry.mC0 = keys.getNumOrBust("C0");
 			newentry.mBSIC = keys.getNumOrBust("BSIC");
@@ -376,9 +380,10 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 		}
 
 		newentry.mIPAddress = sockaddr2string(peer, false);
+		// (tal) NO MORE RETURN FROM THIS
 		if (newentry.mIPAddress.size() == 0) {
 			LOG(ERR) << "cannot parse peer socket address for"<<LOGVAR2("C0",newentry.mC0)<<LOGVAR2("BSIC",newentry.mBSIC);
-			return;
+	//		return;
 		}
 
 
