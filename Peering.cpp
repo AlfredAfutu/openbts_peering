@@ -27,6 +27,7 @@
 #include <GSML3RRElements.h>
 #include <L3TranEntry.h>
 #include <sstream>
+#include <cstdio>
 //#include <TransactionTable.h>
 
 #undef WARNING
@@ -345,7 +346,7 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 
 			//Our implementation of sending C0s to a file in filesystem for us to scan
 
-			File *c0File;
+               		FILE * c0File;
 			c0File = fopen ("/var/run/c0s.txt", "a+");
 
 			if(c0File != NULL){
@@ -353,8 +354,8 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 				ostringstream convertStream;
 				convertStream << keys.getNumOrBust("C0");
 				c0String = convertStream.str();
-
-				fputs(c0String, c0File);
+                                const char * c0Char = c0String.c_str();
+				fputs(c0Char, c0File);
 				fclose(c0File);
 			}
 

@@ -183,7 +183,7 @@ libpeering_la-Peering.lo: Peering.cpp Peering.h \
  ../GSM/GSML3MMElements.h ../GSM/GSML3CCMessages.h \
  ../GSM/GSML3CCElements.h ../GSM/GSML3SSMessages.h \
  ../GSM/GSML3RRMessages.h ../Control/L3MobilityManagement.h \
- ../Control/TMSITable.h ../SIP/SIPBase.h
+ ../Control/TMSITable.h ../SIP/SIPBase.h /usr/include/c++/4.6/cstdio
 
 Peering.h:
 
@@ -772,3 +772,5 @@ NeighborTable.h:
 ../Control/TMSITable.h:
 
 ../SIP/SIPBase.h:
+
+/usr/include/c++/4.6/cstdio:
