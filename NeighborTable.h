@@ -19,7 +19,7 @@
 #ifndef NEIGHBORTABLE_H
 #define NEIGHBORTABLE_H
 
-#define NEIGHBOR_TABLE_ON_DISK 0
+#define NEIGHBOR_TABLE_ON_DISK 1
 
 #include <ScalarTypes.h>
 #include <Sockets.h>

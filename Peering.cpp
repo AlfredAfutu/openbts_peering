@@ -82,7 +82,7 @@ string sockaddr2string(const struct sockaddr_in* peer, bool noempty)
 {
 	// Get a string for the sockaddr_in.
 	char addrString[256];
-	const char *ret = inet_ntop(AF_INET,&(peer->sin_addr),addrString,255);
+	const char *ret = inet_ntop(AF_INET,&(peer->sin_addr),addrString,255); // read more on this: http://pubs.opengroup.org/onlinepubs/009695399/functions/inet_ntop.html
 	if (!ret) {
 		LOG(ERR) << "cannot parse peer socket address";
 	 	return string(noempty ? "<error: cannot parse peer socket address>" : "");
@@ -329,7 +329,8 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 		return;
 	}
 
-	if (0 == strncmp(message,"RSP ",4)) {
+	if (0 == strncmp(message,"RSP ",4)) 
+	{
 		// RSP?  Digest it.
 		NeighborEntry newentry;
 
@@ -346,9 +347,9 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 			SimpleKeyValue keys;
 			keys.addItems(message + sizeof("RSP NEIGHBOR_PARAMS"));	// sizeof is +1 which is ok - we are skipping the initial space.
 
-			//Our implementation of sending C0s to a file in filesystem for us to scan
+			//Our implementation of picking C0s to a file in filesystem for us to scan
 
-               		FILE * c0File;
+            FILE * c0File;
 			c0File = fopen ("/var/run/c0s.txt", "a+");
 
 			if(c0File != NULL)
@@ -367,10 +368,10 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 			if (valid && neighborID == btsid) 
 			{
 				LOG(ERR) << "BTS is in its own GSM.Neighbors list.";
-				return;
+				// (tal) NO MORE RETURN FROM THIS because we know it comes here
+	//			return;
 			}
 			
-
 			newentry.mC0 = keys.getNumOrBust("C0");
 			newentry.mBSIC = keys.getNumOrBust("BSIC");
 			newentry.mNoise = keys.getNumOrBust("noise");
@@ -380,39 +381,44 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 		}
 
 		newentry.mIPAddress = sockaddr2string(peer, false);
-		// (tal) NO MORE RETURN FROM THIS
-		if (newentry.mIPAddress.size() == 0) {
+		if (newentry.mIPAddress.size() == 0) 
+		{
 			LOG(ERR) << "cannot parse peer socket address for"<<LOGVAR2("C0",newentry.mC0)<<LOGVAR2("BSIC",newentry.mBSIC);
-	//		return;
+			return;
 		}
 
 
 		// Did the neighbor list change?
+		// (tal) Something is very wrong here or I am going crazy. This should just tell if any of the parameters changed? why is it going to add? 
 		bool change = gNeighborTable.ntAddInfo(newentry);
 		// no change includes unsolicited RSP NEIGHBOR_PARAMS.  drop it.
 		if (!change) return;
 
 		// It there a BCC conflict?
 		int ourBSIC = gBTS.BSIC();
-		if (newentry.mC0 == (int)gTRX.C0()) {
-			if (newentry.mBSIC == ourBSIC) {
+		if (newentry.mC0 == (int)gTRX.C0()) 
+		{
+			if (newentry.mBSIC == ourBSIC) 
+			{
 				logAlert(format("neighbor with matching ARFCN.C0 + BSIC [Base Station Identifier] codes: C0=%d BSIC=%u",newentry.mC0,newentry.mBSIC));
-			} else {
+			} 
+			else 
+			{
 				// Two BTS on the same ARFCN close enough to be neighbors, which is probably a bad idea, but legal.
 				// Is it worth an ALERT?
-				LOG(WARNING) << format("neighbor with matching ARFCN.C0 but different BSIC [Base Station Identifier] code: C0=%d, BSIC=%u, my BSIC=%u",
-						newentry.mC0,newentry.mBSIC,gTRX.C0());
+				LOG(WARNING) << format("neighbor with matching ARFCN.C0 but different BSIC [Base Station Identifier] code: C0=%d, BSIC=%u, my BSIC=%u",newentry.mC0,newentry.mBSIC,gTRX.C0());
 			}
 		}
 
 		// 3-2014: Warn for overlapping ARFCN use.  Fixes ticket #857
+
 		int myC0 = gTRX.C0();
 		int myCEnd = myC0 + gConfig.getNum("GSM.Radio.ARFCNs") - 1;
 		int neighborCEnd = newentry.mC0 + newentry.mNumArfcns - 1;
 		bool overlap = myC0 <= neighborCEnd && myCEnd >= (int) newentry.mC0;
-		if (overlap) {
-			LOG(WARNING) << format("neighbor IP=%s BSIC=%d ARFCNs=%u to %d overlaps with this BTS ARFCNs=%d to %d",
-					newentry.mIPAddress.c_str(), newentry.mBSIC, newentry.mC0, neighborCEnd, myC0, myCEnd);
+		if (overlap) 
+		{
+			LOG(WARNING) << format("neighbor IP=%s BSIC=%d ARFCNs=%u to %d overlaps with this BTS ARFCNs=%d to %d", newentry.mIPAddress.c_str(), newentry.mBSIC, newentry.mC0, neighborCEnd, myC0, myCEnd);
 		}
 
 		// Is there an NCC conflict?
@@ -421,12 +427,13 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 		int NCCMaskBit = 1 << neighborNCC;
 		int ourNCCMask = gConfig.getNum("GSM.CellSelection.NCCsPermitted");
 		ourNCCMask |= 1 << gConfig.getNum("GSM.Identity.BSIC.NCC");
-		if ((NCCMaskBit & ourNCCMask) == 0) { 
+		if ((NCCMaskBit & ourNCCMask) == 0) 
+		{ 
 			//LOG(ALERT) << "neighbor with NCC " << neighborNCC << " not in NCCsPermitted";
 			logAlert(format("neighbor with NCC=%u not in NCCsPermitted",neighborNCC));
 		}
 		// There was a change, so regenerate the beacon
-		gBTS.regenerateBeacon();
+		gBTS.regenerateBeacon(); //regenerateBeacon is called whenever there is a change to the config database.
 		return;
 	}
 

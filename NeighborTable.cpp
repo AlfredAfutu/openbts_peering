@@ -46,6 +46,8 @@ static const char* createNeighborTable = {
 #endif
 
 // Return a copy of the pentry if *entry is non-NULL.
+//when databse not on device
+/*
 bool NeighborTable::ntFindByIP(string ip, NeighborEntry *pentry)
 {
 	ScopedLock lock(mLock);
@@ -53,22 +55,24 @@ bool NeighborTable::ntFindByIP(string ip, NeighborEntry *pentry)
 	if (mit == mNeighborMap.end()) { return false; }
 	if (pentry) { *pentry = mit->second; }
 	return true;
-}
+}*/
 
 // Return a copy of the pentry if *entry is non-NULL.
+
 bool NeighborTable::ntFindByPeerAddr(const struct ::sockaddr_in* peer, NeighborEntry *pentry)
 {
-	string ipaddr = sockaddr2string(peer, false);
+/*	string ipaddr = sockaddr2string(peer, false);
 	ScopedLock lock(mLock);
 	NeighborTableMap::iterator mit = mNeighborMap.find(ipaddr);
 	if (mit == mNeighborMap.end()) { return false; }
-	if (pentry) { *pentry = mit->second; }
+	if (pentry) { *pentry = mit->second; }*/
 	return true;
 }
 
 // The C0 ARFCN is not sufficient because there could be multiple BTS on the same ARFCN, so we need to match the BSIC too.
 bool NeighborTable::ntFindByArfcn(int arfcn, int bsic, NeighborEntry *pentry)
 {
+	/*
 	if (arfcn < 0 || bsic < 0) {
 		// These were uninitialized values.  It would not have hurt anything to just let this fall through and search for them.
 		return false;
@@ -80,7 +84,7 @@ bool NeighborTable::ntFindByArfcn(int arfcn, int bsic, NeighborEntry *pentry)
 			if (pentry) { *pentry = entry; }
 			return true;
 		}
-	}
+	}*/
 	return false;
 }
 
@@ -155,7 +159,7 @@ static void makeNeighborSet(set<string> &neighborSet)
 			continue;
 		}
 #if NEIGHBOR_TABLE_ON_DISK
-		addNeighbor(&peer);
+		//addNeighbor(&peer);
 #else
 		string neighborIP = sockaddr2string(&peer,false);
 		if (neighborSet.find(neighborIP) == neighborSet.end()) {
@@ -294,41 +298,52 @@ void NeighborTable::addNeighbor(const struct ::sockaddr_in* address)
 //	int noise)						// noise level (not supported by NEIGHBOR_TABLE_ON_DISK)
 bool NeighborTable::ntAddInfo(NeighborEntry &newentry)
 {
+	LOG(ERR) << "In the start of ntAaddInfo";
 	ScopedLock lock(mLock);
+	LOG(ERR) << "after scopedLock";
 #if NEIGHBOR_TABLE_ON_DISK
-	if (mDB == NULL) { return false; }	// we already threw an ALERT.
+
+	if (mDB == NULL) 
+	{ 
+		LOG(ERR) << "mdb == NULL";
+		return false; 
+	}	// we already threw an ALERT.
 	// Get a string for the sockaddr_in.
 	char addrString[256];
-	const char *ret = inet_ntop(AF_INET,&(address->sin_addr),addrString,255);
-	if (!ret) {
-		LOG(ERR) << "cannot parse peer socket address";
-		return false;
-	}
+	LOG(ERR) << "Before *ret";
+	//const char *ret = inet_ntop(AF_INET,&(address->sin_addr),addrString,255);
+	//LOG(ERR) << "AFTER *ret";
+	//if (!ret) {
+	//	LOG(ERR) << "cannot parse peer socket address";
+	//	return false;
+	//}
 
-	//char query[200];
+	char query[200];
 	unsigned oldC0;  // C0 is arbitrary integer column.  just want to know if ipaddress is in table.
 	unsigned oldBSIC;
 	//snprintf(query, sizeof(query), "%s:%d", addrString,(int)ntohs(address->sin_port));
-	if (!sqlite3_single_lookup(mDB, "NEIGHBOR_TABLE", "IPADDRESS", newentry.mIPAddress, "C0", oldC0) ||
-	    !sqlite3_single_lookup(mDB, "NEIGHBOR_TABLE", "IPADDRESS", newentry.mIPAddress, "BSIC", oldBSIC)) {
+	char * valuedata;
+	if (!sqlite3_single_lookup(mDB, "NEIGHBOR_TABLE", "IPADDRESS", newentry.mIPAddress.c_str(), "C0", oldC0) || !sqlite3_single_lookup(mDB, "NEIGHBOR_TABLE", "IPADDRESS", newentry.mIPAddress.c_str(), "BSIC", oldBSIC)) {
 		LOG(NOTICE) << "Ignoring unsolicited 'RSP NEIGHBOR_PARAMS' from " << newentry.mIPAddress;
 		return false;
 	}
-	LOG(DEBUG) << "updating " << addrString << ":" << ntohs(address->sin_port) << " in neighbor table" <<LOGVAR(C0)<<LOGVAR(BSIC)<<LOGVAR(oldC0) <<LOGVAR(oldBSIC);
+	//LOG(DEBUG) << "updating " << addrString << ":" << ntohs(address->sin_port) << " in neighbor table" <<LOGVAR(C0)<<LOGVAR(BSIC)<<LOGVAR(oldC0) <<LOGVAR(oldBSIC);
 	// (pat) Why would we set the HOLDOFF to 0 every time we see a RSP to neighbor info?
 	newentry.mUpdated = time(NULL);
 	snprintf(query,sizeof(query),
 		"REPLACE INTO NEIGHBOR_TABLE (IPADDRESS,UPDATED,C0,BSIC,HOLDOFF) "
 		"VALUES ('%s',%u,%u,%u,0) ",
-		newentry.mIPAddress,newentry.mUpdated,newentry.mC0,newentry.mBSIC);
+		newentry.mIPAddress.c_str(),newentry.mUpdated,newentry.mC0,newentry.mBSIC);
 	if (!sqlite3_command(mDB,query)) {
 		LOG(ALERT) << "write to neighbor table failed: " << query;
 		return false;
 	}
 #else
+	LOG(ERR) << "IN the #else part of things";
 	NeighborTableMap::iterator mit = mNeighborMap.find(newentry.mIPAddress);
-	if (mit == mNeighborMap.end()) {
-		LOG(NOTICE) << "Ignoring unsolicited 'RSP NEIGHBOR_PARAMS' from " << newentry.mIPAddress;
+	if (mit == mNeighborMap.end()) 
+	{
+		LOG(ERR) << "Ignoring unsolicited 'RSP NEIGHBOR_PARAMS' from " << newentry.mIPAddress;
 	}
 	NeighborEntry &oldentry = mit->second;
 	// (pat) Added test to see if C0 or BCC changed.  That would not change the beacon but we need to recheck for conflicts
@@ -340,7 +355,7 @@ bool NeighborTable::ntAddInfo(NeighborEntry &newentry)
 #endif
 	// update mBCCSet
 	//mBCCSet = getBCCSet();
-
+	bool change;
 	// update mARFCNList and check for a change
 	std::vector<unsigned> newARFCNs = getARFCNs();
 	if (newARFCNs!=mARFCNList) {
@@ -616,8 +631,9 @@ std::vector<unsigned> NeighborTable::getARFCNs() const
 		for (vector<unsigned>::iterator it = bcchChannelList.begin(); it != bcchChannelList.end(); it++) { ss <<" "<<*it; }
 		LOG(DEBUG) << ss.str();
 	}
-	return bcchChannelList;
 #endif
+	return bcchChannelList;
+
 }
 
 
@@ -669,12 +685,16 @@ long NeighborEntry::getHoldoff() const
 
 void NeighborTable::getNeighborVector(std::vector<NeighborEntry> &nvec)
 {
+	/*
 	ScopedLock lock(mLock);
+
 	nvec.clear();
-	for (NeighborTableMap::iterator mit = mNeighborMap.begin(); mit != mNeighborMap.end(); mit++) {
+	for (NeighborTableMap::iterator mit = mNeighborMap.begin(); mit != mNeighborMap.end(); mit++) 
+	{
 		LOG(DEBUG) <<"Pushing IPaddr="<<mit->first <<" entry.mIPAddress="<<mit->second.mIPAddress;
 		nvec.push_back(mit->second);
 	}
+	*/
 }
 
 bool NeighborTable::neighborCongestion(unsigned arfcn, unsigned bsic)
