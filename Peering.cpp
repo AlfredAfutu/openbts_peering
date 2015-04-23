@@ -246,6 +246,7 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 			logAlert(format("badly formatted peering message: %s",message));
 			return;
 		}
+		neighborC0 = 10;
 		// Did the neighbor list change?
 		bool change = gNeighborTable.addInfo(peer,(unsigned)time(NULL),neighborC0,neighborBSIC);
 		// no change includes unsolicited RSP NEIGHBOR_PARAMS.  drop it.
