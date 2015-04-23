@@ -1,15 +1,7 @@
 /**@file Messages for peer-to-peer protocol */
 /*
-* Copyright 2011, 2014 Range Networks, Inc.
-* This software is distributed under multiple licenses;
-* see the COPYING file in the main directory for licensing
-* information for this specific distribution.
-*
-* This use of this software may be subject to additional restrictions.
-* See the LEGAL file in the main directory for details.
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Copright 2011 Range Networks, Inc.
+ * All rights reserved.
 */
 
 
@@ -142,7 +134,7 @@ class PeerInterface {
 	//@{
 
 	/** Process the NEIGHBOR_PARMS message/response. */
-	void processNeighborParams(const struct ::sockaddr_in* peer, const char* message);	// Pre-3-2014 message format.
+	void processNeighborParams(const struct ::sockaddr_in* peer, const char* message);
 
 	/** Process REQ HANDOVER. */
 	void processHandoverRequest(const struct ::sockaddr_in* peer, const char* message);
@@ -165,16 +157,17 @@ class PeerInterface {
 	void sendHandoverFailure(const Control::HandoverEntry *hop,GSM::RRCause cause,unsigned holdoff);
 
 	/** Send REQ HANDOVER */
-	bool sendHandoverRequest(string peer, const RefCntPointer<Control::TranEntry> tran, string cause);
+	bool sendHandoverRequest(string peer, const RefCntPointer<Control::TranEntry> tran);
 
 	//@}
 };
 
 
-extern string sockaddr2string(const struct sockaddr_in* peer, bool noempty);
 
 }; //namespace
 
 extern Peering::PeerInterface gPeerInterface;
 
 #endif
+
+
