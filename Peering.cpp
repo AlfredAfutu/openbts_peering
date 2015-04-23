@@ -1,18 +1,15 @@
 /**@file Messages for peer-to-peer protocol */
 /*
 * Copyright 2011, 2014 Range Networks, Inc.
-
 * This software is distributed under multiple licenses;
 * see the COPYING file in the main directory for licensing
 * information for this specific distribution.
 *
 * This use of this software may be subject to additional restrictions.
 * See the LEGAL file in the main directory for details.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
 */
 
 #define LOG_GROUP LogGroup::Control
@@ -26,8 +23,6 @@
 #include <GSMLogicalChannel.h>
 #include <GSML3RRElements.h>
 #include <L3TranEntry.h>
-#include <sstream>
-#include <cstdio>
 //#include <TransactionTable.h>
 
 #undef WARNING
@@ -229,15 +224,12 @@ void PeerInterface::drive()
 	//LOG(INFO) << "received " << mReadBuffer;
 	LOG(DEBUG) << "received " << mReadBuffer;
 
-
 	process(mSocket.source(),mReadBuffer);
 }
 
 
 void PeerInterface::process(const struct sockaddr_in* peer, const char* message)
 {
-        string socketAddress = sockaddr2string(peer, false);
-        LOG(NOTICE) << "Socket address is " << socketAddress;
 	logMessage("receive",peer,message);
 
 	// neighbor message?
@@ -340,36 +332,17 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 				logAlert(format("badly formatted peering message: %s",message));
 				return;
 			}
-		} 
-		else 
-		{
+		} else {
 			SimpleKeyValue keys;
 			keys.addItems(message + sizeof("RSP NEIGHBOR_PARAMS"));	// sizeof is +1 which is ok - we are skipping the initial space.
 
-			//Our implementation of sending C0s to a file in filesystem for us to scan
-
-               		FILE * c0File;
-			c0File = fopen ("/var/run/c0s.txt", "a+");
-
-			if(c0File != NULL)
-			{
-				string c0String;
-				ostringstream convertStream;
-				convertStream << keys.getNumOrBust("C0");
-				c0String = convertStream.str();
-                                const char * c0Char = c0String.c_str();
-				fputs(c0Char, c0File);
-				fclose(c0File);
+			{	bool valid;
+				unsigned neighborID = keys.getNum("btsid",valid);
+				if (valid && neighborID == btsid) {
+					LOG(ERR) << "BTS is in its own GSM.Neighbors list.";
+					return;
+				}
 			}
-
-			bool valid;
-			unsigned neighborID = keys.getNum("btsid",valid);
-			if (valid && neighborID == btsid) 
-			{
-				LOG(ERR) << "BTS is in its own GSM.Neighbors list.";
-				return;
-			}
-			
 
 			newentry.mC0 = keys.getNumOrBust("C0");
 			newentry.mBSIC = keys.getNumOrBust("BSIC");
@@ -380,10 +353,9 @@ void PeerInterface::processNeighborParams(const struct sockaddr_in* peer, const 
 		}
 
 		newentry.mIPAddress = sockaddr2string(peer, false);
-		// (tal) NO MORE RETURN FROM THIS
 		if (newentry.mIPAddress.size() == 0) {
 			LOG(ERR) << "cannot parse peer socket address for"<<LOGVAR2("C0",newentry.mC0)<<LOGVAR2("BSIC",newentry.mBSIC);
-	//		return;
+			return;
 		}
 
 
@@ -688,7 +660,6 @@ void PeerInterface::processHandoverResponse(const struct sockaddr_in* peer, cons
 	unsigned reference;
 	unsigned C0, NCC, BCC;
 	unsigned typeAndOffset, TN, TSC, ARFCN;
-
 	// This is "Handover Accept" in the ladder diagram; we are "BS1" receiving it.
 	// FIXME -- Error-check for correct message format.
 	sscanf(message,"RSP HANDOVER %u %u  %u  %u %u %u  %u %u %u %u",
@@ -697,18 +668,15 @@ void PeerInterface::processHandoverResponse(const struct sockaddr_in* peer, cons
 		&C0, &NCC, &BCC,
 		&typeAndOffset, &TN, &TSC, &ARFCN
 		);
-
 	if (cause) {
 		LOG(NOTICE) << "handover of transaction " << transactionID << " refused with cause " << cause;
 		return;
 	}
-
 	Control::TranEntry *transaction = gNewTransactionTable.ttFindById(transactionID);
 	if (!transaction) {
 		LOG(NOTICE) << "received handover response with no matching transaction " << transactionID;
 		return;
 	}
-
 	// Set the handover parameters and state to HandoverOutbound.
 	// The state change will trigger the call management loop
 	// to send the Handover Command to the handset.

@@ -1,18 +1,15 @@
 /**@file Messages for peer-to-peer protocol */
 /*
 * Copyright 2011, 2014 Range Networks, Inc.
-
 * This software is distributed under multiple licenses;
 * see the COPYING file in the main directory for licensing
 * information for this specific distribution.
 *
 * This use of this software may be subject to additional restrictions.
 * See the LEGAL file in the main directory for details.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
 */
 
 
@@ -24,10 +21,9 @@
 #include <Timeval.h>
 #include <Globals.h>
 #include <Utils.h>
-
 //#include <ControlTransfer.h>
 #include <GSML3RRElements.h>
-using namespace std;
+
 
 namespace Control {
 class TranEntry;
@@ -91,7 +87,6 @@ class PeerInterface {
 
 	volatile unsigned mReferenceCounter;
 
-       
 	Thread mServer1;
 	Thread mServer2;
 
@@ -183,5 +178,3 @@ extern string sockaddr2string(const struct sockaddr_in* peer, bool noempty);
 extern Peering::PeerInterface gPeerInterface;
 
 #endif
-
-
