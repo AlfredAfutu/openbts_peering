@@ -1,0 +1,21 @@
+I am gonna keep this readme file as a mode for putting furthur instructions every night. 
+
+- I have added a file in repo namely GSM/GSMConfig.cpp and this file as you can guess goes to replace the GSMConfig file in OpenBTS folder of endaga's version of OpenBTS
+- Furthermore you need to do the following before I wake up:
+- Please pull code from 'old_version' branch 
+- Put the 4 files in the Peering folder 
+- Remove the OpenBTS log file (backup it) 
+- compile the new version of Endaga's openbts
+- change init file so as to start the endaga's openbts
+- before you reboot make sure you set the GSM.Neighbors to empty string
+- make sure that Log.Level in openbtscli or db is set to 'NOTICE'
+- restart RApidcell
+- After making sure the correct version (which you compiled above) installed, change the GSM.Neighbors to '127.0.0.1'
+- make a folder whose name is today's date on my machine
+- put the openBTS log file, Openbts.db file and any other log file you can think of in the folder you just made on my machine.
+- check the neighbortable db to make sure that 127.0.0.1 is set in the db and has a C0 value of 10. 
+- start the constant packet stream catcher thing from the OpenBTS 5.0 apps folder. (Remember that packet exchange thing, I checked this, it was working) 
+- Put this packet thing in a file and send me that too (adding to the date folder u made above)
+- Run this for a while and then send me this file. 
+
+- If you have any questions or you mess up something you can start again. I will talk with u in a few hours. 
